@@ -57,8 +57,8 @@ func AppPreferencesHandler(w http.ResponseWriter, r *http.Request) {
         ret := CreateTCPSocket()
         port = ret.Port
         go AcceptTCPConnection(ret.L)
+        w.Write([]byte(fmt.Sprintf("%d", port)))
     }
-    w.Write([]byte(fmt.Sprintf("%d", port)))
     return
 }
 
