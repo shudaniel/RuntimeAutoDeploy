@@ -1,9 +1,13 @@
 package trigger
 
 import (
+    "RuntimeAutoDeploy/common"
     "fmt"
     "net/http"
     "net"
+    "encoding/json"
+    "io/ioutil"
+    log "github.com/Sirupsen/logrus"
 )
 
 type Tuple struct {
@@ -39,12 +43,21 @@ func HandleConnection(c net.Conn) {
     c.Close()
 }
 
+func HandleConfigFile(config *common.RADConfig) {
+    // Parse the config file
+    // Download the git repository into local Trigger/build folder
+    // Check for Dockerfile. If does not exist, quit
+    // else build docker image and store within Trigger/images
+    fmt.Println(config.GitRepoLink)
+}
+
 func AcceptTCPConnection(l net.Listener) {
     c, err := l.Accept()
     if err != nil {
         fmt.Println(err)
         return
     }
+    defer c.Close()
 
     HandleConnection(c)
 }
@@ -58,6 +71,27 @@ func AppPreferencesHandler(w http.ResponseWriter, r *http.Request) {
         port = ret.Port
         go AcceptTCPConnection(ret.L)
         w.Write([]byte(fmt.Sprintf("%d", port)))
+        
+        body, err := ioutil.ReadAll(r.Body)
+        if err != nil {
+            log.WithFields(log.Fields{
+                "error": err.Error(),
+            }).Error("error reading body")
+            http.Error(w, "can't read body", http.StatusBadRequest)
+            return
+        }
+        data := common.RADConfig{}
+        err = json.Unmarshal(body, &data)
+        if err != nil {
+            log.WithFields(log.Fields{
+                "error": err.Error(),
+            }).Error("error unmarshal body")
+            return
+        }
+
+        HandleConfigFile(&data)
+    } else {
+        log.Error("error. Received incorrect HTTP method. Expecting POST")
     }
     return
 }
