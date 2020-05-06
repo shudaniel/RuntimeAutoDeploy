@@ -21,11 +21,6 @@ import (
     git "github.com/go-git/go-git"
 )
 
-type Tuple struct {
-    Port int 
-    L net.Listener
-}
-
 func Cleanup(dir string) error {
     // Delete the dir folder and all repos inside
     d, err := os.Open(dir)
@@ -131,7 +126,7 @@ func BuildDockerImage(dockerpath string) error {
 }
 
 // Create a TCP Server listening on a port and return the port
-func CreateTCPSocket() Tuple {
+func CreateTCPSocket() (int, net.Listener) {
     // Keep trying ports until either you exhaust all ports 
     // or one is available
     // If no ports are available, return 0
@@ -142,12 +137,12 @@ func CreateTCPSocket() Tuple {
         l, err = net.Listen("tcp4", fmt.Sprintf(":%d", port))
         if err == nil {
             fmt.Println(fmt.Sprintf("Port %d selected", port) )
-            return Tuple{port, l}
+            return port, l
         }
     }
 
 
-    return Tuple{0, nil}
+    return 0, nil
 }
 
 
@@ -207,12 +202,11 @@ func HandleConfigFile(config *common.RADConfig) bool {
 
 // AppPreferencesHandler handles the requests from the apps
 func AppPreferencesHandler(w http.ResponseWriter, r *http.Request) {
-    var port int
+
     if r.Method == "POST" {
         // ctx, _ := context.WithCancel(r.Context())
-        ret := CreateTCPSocket()
-        port = ret.Port
-        go AcceptTCPConnection(ret.L)
+        port, l := CreateTCPSocket()
+        go AcceptTCPConnection(l)
         w.Write([]byte(fmt.Sprintf("%d", port)))
         
         body, err := ioutil.ReadAll(r.Body)
