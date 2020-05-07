@@ -38,6 +38,56 @@ func Cleanup(dir string) error {
             return err
         }
     }
+    
+    return nil
+}
+
+func TarDirectory(dir string, buf io.Writer) error {
+    // Tar the dir folder
+    // Reference: https://gist.github.com/mimoo/25fc9716e0f1353791f5908f94d6e726
+    tw := tar.NewWriter(buf)
+    filepath.Walk(dir, func(file string, fi os.FileInfo, err error) error {
+        // generate tar header
+
+        // fmt.Println(file)
+        // fmt.Println(fi.Name())
+
+        header, err := tar.FileInfoHeader(fi, file)
+        if err != nil {
+            log.Error("FileInfoHeader")
+            return err
+        }
+
+        // must provide real name
+        // (see https://golang.org/src/archive/tar/common.go?#L626)
+        header.Name = filepath.ToSlash(file)
+
+        // write header
+        if err := tw.WriteHeader(header); err != nil {
+            log.Error("WriteHeader")
+            return err
+        }
+        // if not a dir, write file content
+        if !fi.IsDir() {
+
+            data, err := os.Open(file)
+            if err != nil {
+                return err
+            }
+            
+            if _, err := io.Copy(tw, data); err != nil {
+                return err
+            }
+        }
+        
+        return nil
+	})
+
+	// produce tar
+	if err := tw.Close(); err != nil {
+		return err
+	}
+    
     return nil
 }
 
@@ -63,45 +113,27 @@ func DownloadGitRepo(gitrepo string) bool {
     return true
 }
 
-func BuildDockerImage(dockerpath string) error {
+func BuildDockerImage(path string) error {
     // https://stackoverflow.com/questions/38804313/build-docker-image-from-go-code
     ctx := context.Background()
     cli, err := dockerclient.NewClientWithOpts(dockerclient.WithVersion("1.40"))  // Max supported API version
-    dockerFile := "Dockerfile"
+    
     if err != nil {
         log.Fatal(err, " :unable to init client")
         return err
     }
 
     buf := new(bytes.Buffer)
-    tw := tar.NewWriter(buf)
-    defer tw.Close()
 
-    dockerFileReader, err := os.Open(dockerpath)
+    err = TarDirectory(path, buf)
+
     if err != nil {
-        log.Fatal(err, " :unable to open Dockerfile")
-        return err
-    }
-    readDockerFile, err := ioutil.ReadAll(dockerFileReader)
-    if err != nil {
-        log.Fatal(err, " :unable to read dockerfile")
+        log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error(" :unable to tar directory")
         return err
     }
 
-    tarHeader := &tar.Header{
-        Name: dockerFile,
-        Size: int64(len(readDockerFile)),
-    }
-    err = tw.WriteHeader(tarHeader)
-    if err != nil {
-        log.Fatal(err, " :unable to write tar header")
-        return err
-    }
-    _, err = tw.Write(readDockerFile)
-    if err != nil {
-        log.Fatal(err, " :unable to write tar body")
-        return err
-    }
     dockerFileTarReader := bytes.NewReader(buf.Bytes())
 
     imageBuildResponse, err := cli.ImageBuild(
@@ -109,16 +141,21 @@ func BuildDockerImage(dockerpath string) error {
         dockerFileTarReader,
         dockertypes.ImageBuildOptions{
             Context:    dockerFileTarReader,
-            Dockerfile: dockerFile,
+            Dockerfile: common.GIT_BUILD_FOLDER + "Dockerfile",
             Remove:     true})
     if err != nil {
-        log.Fatal(err, " :unable to build docker image")
+
+        log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error(" :unable to build docker image")
         return err
     }
     defer imageBuildResponse.Body.Close()
     _, err = io.Copy(os.Stdout, imageBuildResponse.Body)
     if err != nil {
-        log.Fatal(err, " :unable to read image build response")
+        log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error(err, " :unable to read image build response")
         return err
     }
 
@@ -140,7 +177,6 @@ func CreateTCPSocket() (int, net.Listener) {
             return port, l
         }
     }
-
 
     return 0, nil
 }
@@ -175,20 +211,8 @@ func HandleConfigFile(config *common.RADConfig) bool {
     if !DownloadGitRepo(config.GitRepoLink) {
         return false;
     }
-    // dockerBuildContext, err := os.Open(common.GIT_BUILD_FOLDER)
-    // if err != nil {
-    //     log.WithFields(log.Fields{
-    //         "error": err.Error(),
-    //     }).Error("error getting docker build context")
-    //     return false
-    // }
-    // defer dockerBuildContext.Close()
 
-    // buildOptions := dockertypes.ImageBuildOptions{
-    //     Dockerfile:   "Dockerfile", // optional, is the default
-    // }
-
-    err := BuildDockerImage(common.GIT_BUILD_FOLDER + "Dockerfile")
+    err := BuildDockerImage(common.GIT_BUILD_FOLDER)
     if err != nil {
         log.WithFields(log.Fields{
             "error": err.Error(),
@@ -227,6 +251,7 @@ func AppPreferencesHandler(w http.ResponseWriter, r *http.Request) {
         }
 
         _ = HandleConfigFile(&data)
+
         err = Cleanup(common.GIT_BUILD_FOLDER)
         if err != nil {
             log.WithFields(log.Fields{
