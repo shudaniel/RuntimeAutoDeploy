@@ -51,7 +51,8 @@ echo -e "***********************************************************************
 
 echo -e "############################################# Installing Clusterctl ############################################## \n"
 
-
+## for mac:
+## curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v0.3.5/clusterctl-darwin-amd64 -o clusterctl
 curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v0.3.5/clusterctl-linux-amd64 -o clusterctl
 chmod +x ./clusterctl
 sudo mv ./clusterctl /usr/local/bin/clusterctl
@@ -67,6 +68,8 @@ echo -e "***********************************************************************
 
 echo -e "############################################ Install clusterawsadm ################################################# \n"
 
+# for mac OS
+# curl -L https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/v0.5.3/clusterawsadm-darwin-amd64 -o clusterawsadm
 curl -L https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/download/v0.5.3/clusterawsadm-linux-amd64 -o clusterawsadm
 chmod +x clusterawsadm
 sudo mv ./clusterawsadm /usr/local/bin/clusterawsadm
