@@ -1,21 +1,23 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
-    "RuntimeAutoDeploy/Trigger/handlers"
-    "RuntimeAutoDeploy/common"
+	trigger "RuntimeAutoDeploy/Trigger/handlers"
+	"RuntimeAutoDeploy/common"
+	"net/http"
+
+	log "github.com/Sirupsen/logrus"
 )
 
-
 func main() {
-    trigger.Cleanup(common.GIT_BUILD_FOLDER)
-    fmt.Println("User Preference Service Started")
-    http.HandleFunc("/trigger",http.HandlerFunc(trigger.AppPreferencesHandler))
-	err := http.ListenAndServe(":8080", nil)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
+	log.Info("RAD Service Started")
+	err := trigger.Cleanup(common.GIT_BUILD_FOLDER)
+	if err != nil {
+		log.Error("Exiting now.")
+		return
+	}
+	http.HandleFunc("/trigger", trigger.RADTriggerHandler)
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
-
