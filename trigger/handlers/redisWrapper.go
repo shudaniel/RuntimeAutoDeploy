@@ -35,3 +35,27 @@ func (routine *Status) addToStatusList(traceId string, status string) {
 	jStatusList, _ = json.Marshal(statusList)
 	routine.redisConn.Set(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId), jStatusList, 0)
 }
+
+func (routine *Status) getStatusList(traceId string) []string {
+	var (
+		res        string
+		err        error
+		statusList []string
+	)
+	res, err = routine.redisConn.Get(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId)).Result()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err":     err.Error(),
+			"traceId": traceId,
+		}).Error("error fetching value from redis")
+		return nil
+	}
+	err = json.Unmarshal([]byte(res), &statusList)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err.Error(),
+		}).Error("error unmarshalling the retreived value from redis")
+		return nil
+	}
+	return statusList
+}
