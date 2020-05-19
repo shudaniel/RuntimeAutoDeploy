@@ -139,6 +139,11 @@ func buildDockerImage(ctx context.Context, path string) error {
 
 	if err != nil {
 		log.Fatal(err, " :unable to init client")
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_BUILDING_DOCKER_IMAGE,
+				"unable to start the docker init, there's an issue with the docker client"))
 		return err
 	}
 
@@ -150,6 +155,11 @@ func buildDockerImage(ctx context.Context, path string) error {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error(" :unable to tar directory")
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_BUILDING_DOCKER_IMAGE,
+				"unable to tar the directory"))
 		return err
 	}
 
@@ -167,6 +177,11 @@ func buildDockerImage(ctx context.Context, path string) error {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error(" :unable to build docker image")
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_BUILDING_DOCKER_IMAGE,
+				"error building the docker image"))
 		return err
 	}
 	defer imageBuildResponse.Body.Close()
