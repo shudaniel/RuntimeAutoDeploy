@@ -6,8 +6,10 @@ const (
 
 	// STAGE PRINT
 	STAGE_FORMAT      = "[%s]: %s" // use this as fmt.Sprintf(STAGE_FORMAT, STAGE_STATUS_WIP, STAGE_GIT)
+	STAGE_ERROR_FORMAT = "[%s]: [Stage] %s: [Error] %s"
 	STAGE_STATUS_WIP  = "IN PROGRESS"
 	STAGE_STATUS_DONE = "COMPLETED"
+	STAGE_STATUS_ERROR = "ERROR"
 
 	// STAGES
 	STAGE_GIT                   = "Git Repo Cloned"
