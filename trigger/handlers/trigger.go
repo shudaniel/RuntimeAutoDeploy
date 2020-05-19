@@ -1,4 +1,4 @@
-package trigger
+package handlers
 
 import (
 	"RuntimeAutoDeploy/common"
@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	guuid "github.com/google/uuid"
 
 	log "github.com/Sirupsen/logrus"
 	dockertypes "github.com/docker/docker/api/types"
@@ -95,7 +95,10 @@ func tarDirectory(dir string, buf io.Writer) error {
 	return nil
 }
 
-func downloadGitRepo(gitrepo string) bool {
+func downloadGitRepo(ctx context.Context, gitrepo string) bool {
+
+	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_WIP, common.STAGE_GIT))
 
 	_, err := git.PlainClone(common.GIT_BUILD_FOLDER, false, &git.CloneOptions{
 		URL:      gitrepo,
@@ -105,25 +108,42 @@ func downloadGitRepo(gitrepo string) bool {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error("error cloning repo")
+
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT, common.STAGE_STATUS_ERROR, common.STAGE_GIT, err.Error()))
+
 		return false
 	}
 
 	if _, err := os.Stat(common.GIT_BUILD_FOLDER + "Dockerfile"); os.IsNotExist(err) {
 		// Dockerfile does not exist
 		log.Error("git repo missing Dockerfile")
+
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT, common.STAGE_STATUS_ERROR, common.STAGE_GIT, "Missing Dockerfile"))
 		return false
 	}
-
+	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_WIP, common.STAGE_STATUS_DONE))
 	return true
 }
 
-func buildDockerImage(path string) error {
+func buildDockerImage(ctx context.Context, path string) error {
 	// https://stackoverflow.com/questions/38804313/build-docker-image-from-go-code
-	ctx := context.Background()
+	//ctx := context.Background()
+
+	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_WIP, common.STAGE_BUILDING_DOCKER_IMAGE))
+
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.WithVersion("1.40")) // Max supported API version
 
 	if err != nil {
 		log.Fatal(err, " :unable to init client")
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_BUILDING_DOCKER_IMAGE,
+				"unable to start the docker init, there's an issue with the docker client"))
 		return err
 	}
 
@@ -135,6 +155,11 @@ func buildDockerImage(path string) error {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error(" :unable to tar directory")
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_BUILDING_DOCKER_IMAGE,
+				"unable to tar the directory"))
 		return err
 	}
 
@@ -152,6 +177,11 @@ func buildDockerImage(path string) error {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error(" :unable to build docker image")
+		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_BUILDING_DOCKER_IMAGE,
+				"error building the docker image"))
 		return err
 	}
 	defer imageBuildResponse.Body.Close()
@@ -163,57 +193,23 @@ func buildDockerImage(path string) error {
 		return err
 	}
 
+	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_DONE, common.STAGE_BUILDING_DOCKER_IMAGE))
+
 	return nil
 }
 
-// Create a TCP Server listening on a port and return the port
-func createTCPSocket() (int, net.Listener) {
-	// Keep trying ports until either you exhaust all ports
-	// or one is available
-	// If no ports are available, return 0
-	var port int
-	var l net.Listener
-	var err error
-	for port = 8000; port <= 65535; port++ {
-		l, err = net.Listen("tcp4", fmt.Sprintf(":%d", port))
-		if err == nil {
-			fmt.Println(fmt.Sprintf("Port %d selected", port))
-			return port, l
-		}
-	}
-	return 0, nil
-}
-
-func acceptTCPConnection(l net.Listener) {
-	c, err := l.Accept()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer c.Close()
-
-	handleConnection(c)
-}
-
-func handleConnection(c net.Conn) {
-	// STUB handler function
-
-	fmt.Printf("Serving %s\n", c.RemoteAddr().String())
-
-	c.Close()
-}
-
-func handleConfigFile(config *common.RADConfig) bool {
+func handleConfigFile(ctx context.Context, config *common.RADConfig) bool {
 	// Parse the config file
 	// Download the git repository into local Trigger/build folder
 	// Check for Dockerfile. If does not exist, quit
 	// else build docker image and store within Trigger/images
 	fmt.Println(config.GitRepoLink)
 
-	if !downloadGitRepo(config.GitRepoLink) {
+	if !downloadGitRepo(ctx, config.GitRepoLink) {
 		return false
 	}
-	err := buildDockerImage(common.GIT_BUILD_FOLDER)
+	err := buildDockerImage(ctx, common.GIT_BUILD_FOLDER)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
@@ -225,31 +221,28 @@ func handleConfigFile(config *common.RADConfig) bool {
 }
 
 func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		data    common.RADConfig
+		err     error
+		ctx     context.Context
+		traceId guuid.UUID
+	)
 	if r.Method != "POST" {
 		log.Error("error. Received incorrect HTTP method. Expecting POST")
 		return
 	}
-	port, l := createTCPSocket()
-	go acceptTCPConnection(l)
-	_, _ = w.Write([]byte(fmt.Sprintf("%d", port)))
+	ctx, _ = context.WithCancel(r.Context())
+	traceId = guuid.New()
+	ctx = context.WithValue(ctx, common.TRACE_ID, traceId.String())
 
-	body, err := ioutil.ReadAll(r.Body)
+	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("error reading body")
-		http.Error(w, "can't read body", http.StatusBadRequest)
+			"err": err.Error(),
+		}).Error("error decoding post body in the trigger handler")
 		return
 	}
-	data := common.RADConfig{}
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("error unmarshal body")
-		return
-	}
-	_ = handleConfigFile(&data)
+	_ = handleConfigFile(ctx, &data)
 	err = Cleanup(common.GIT_BUILD_FOLDER)
 	if err != nil {
 		log.WithFields(log.Fields{
