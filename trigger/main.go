@@ -1,8 +1,8 @@
 package main
 
 import (
-	trigger "RuntimeAutoDeploy/Trigger/handlers"
 	"RuntimeAutoDeploy/common"
+	"RuntimeAutoDeploy/trigger/handlers"
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
@@ -10,12 +10,14 @@ import (
 
 func main() {
 	log.Info("RAD Service Started")
-	err := trigger.Cleanup(common.GIT_BUILD_FOLDER)
+	err := handlers.Cleanup(common.GIT_BUILD_FOLDER)
 	if err != nil {
 		log.Error("Exiting now.")
 		return
 	}
-	http.HandleFunc("/trigger", trigger.RADTriggerHandler)
+	go handlers.StartStatusService()
+
+	http.HandleFunc("/trigger", handlers.RADTriggerHandler)
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
 		log.Fatal(err.Error())
