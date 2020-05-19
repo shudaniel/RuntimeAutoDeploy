@@ -98,7 +98,9 @@ func tarDirectory(dir string, buf io.Writer) error {
 func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
-		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_WIP, common.STAGE_GIT))
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_WIP,
+			common.STAGE_GIT))
 
 	_, err := git.PlainClone(common.GIT_BUILD_FOLDER, false, &git.CloneOptions{
 		URL:      gitrepo,
@@ -110,7 +112,10 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 		}).Error("error cloning repo")
 
 		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
-			fmt.Sprintf(common.STAGE_ERROR_FORMAT, common.STAGE_STATUS_ERROR, common.STAGE_GIT, err.Error()))
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_GIT,
+				err.Error()))
 
 		return false
 	}
@@ -120,11 +125,16 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 		log.Error("git repo missing Dockerfile")
 
 		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
-			fmt.Sprintf(common.STAGE_ERROR_FORMAT, common.STAGE_STATUS_ERROR, common.STAGE_GIT, "Missing Dockerfile"))
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_GIT,
+				"Missing Dockerfile"))
 		return false
 	}
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
-		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_WIP, common.STAGE_STATUS_DONE))
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_WIP,
+			common.STAGE_STATUS_DONE))
 	return true
 }
 
@@ -133,7 +143,9 @@ func buildDockerImage(ctx context.Context, path string) error {
 	//ctx := context.Background()
 
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
-		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_WIP, common.STAGE_BUILDING_DOCKER_IMAGE))
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_WIP,
+			common.STAGE_BUILDING_DOCKER_IMAGE))
 
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.WithVersion("1.40")) // Max supported API version
 
@@ -194,7 +206,9 @@ func buildDockerImage(ctx context.Context, path string) error {
 	}
 
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
-		fmt.Sprintf(common.STAGE_FORMAT, common.STAGE_STATUS_DONE, common.STAGE_BUILDING_DOCKER_IMAGE))
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_DONE,
+			common.STAGE_BUILDING_DOCKER_IMAGE))
 
 	return nil
 }
