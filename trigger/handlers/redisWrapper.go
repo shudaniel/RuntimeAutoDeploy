@@ -43,7 +43,7 @@ func (routine *Status) addToStatusList(traceId string, status string, firstAdd b
 	routine.redisConn.Set(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId), jStatusList, 0)
 }
 
-func (routine *Status) getStatusList(traceId string) []string {
+func (routine *Status) getStatusList(traceId string) ([]string, error) {
 	var (
 		res        string
 		err        error
@@ -55,14 +55,14 @@ func (routine *Status) getStatusList(traceId string) []string {
 			"err":     err.Error(),
 			"traceId": traceId,
 		}).Error("error fetching value from redis")
-		return nil
+		return nil, fmt.Errorf("%s", "error fetching value from redis")
 	}
 	err = json.Unmarshal([]byte(res), &statusList)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err.Error(),
-		}).Error("error unmarshalling the retreived value from redis")
-		return nil
+		}).Error("error unmarshalling the retrieved value from redis")
+		return nil, fmt.Errorf("%s", "error unmarshalling retreived value from redis")
 	}
-	return statusList
+	return statusList, nil
 }
