@@ -8,13 +8,20 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func (routine *Status) addToStatusList(traceId string, status string) {
+func (routine *Status) addToStatusList(traceId string, status string, firstAdd bool) {
 	var (
 		res         string
 		err         error
 		statusList  []string
 		jStatusList []byte
 	)
+	if firstAdd {
+		statusList = make([]string, 0)
+		statusList = append(statusList, status)
+		jStatusList, _ = json.Marshal(statusList)
+		routine.redisConn.Set(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId), jStatusList, 0)
+		return
+	}
 	res, err = routine.redisConn.Get(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId)).Result()
 	if err != nil {
 		log.WithFields(log.Fields{

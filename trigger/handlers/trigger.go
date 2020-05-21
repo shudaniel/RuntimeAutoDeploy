@@ -100,7 +100,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
-			common.STAGE_GIT))
+			common.STAGE_GIT), true)
 
 	_, err := git.PlainClone(common.GIT_BUILD_FOLDER, false, &git.CloneOptions{
 		URL:      gitrepo,
@@ -115,7 +115,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
-				err.Error()))
+				err.Error()), false)
 
 		return false
 	}
@@ -128,13 +128,13 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
-				"Missing Dockerfile"))
+				"Missing Dockerfile"), false)
 		return false
 	}
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
-			common.STAGE_STATUS_DONE))
+			common.STAGE_STATUS_DONE), false)
 	return true
 }
 
@@ -145,7 +145,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
-			common.STAGE_BUILDING_DOCKER_IMAGE))
+			common.STAGE_BUILDING_DOCKER_IMAGE), false)
 
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.WithVersion("1.40")) // Max supported API version
 
@@ -155,7 +155,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_BUILDING_DOCKER_IMAGE,
-				"unable to start the docker init, there's an issue with the docker client"))
+				"unable to start the docker init, there's an issue with the docker client"), false)
 		return err
 	}
 
@@ -171,7 +171,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_BUILDING_DOCKER_IMAGE,
-				"unable to tar the directory"))
+				"unable to tar the directory"), false)
 		return err
 	}
 
@@ -193,7 +193,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_BUILDING_DOCKER_IMAGE,
-				"error building the docker image"))
+				"error building the docker image"), false)
 		return err
 	}
 	defer imageBuildResponse.Body.Close()
@@ -208,7 +208,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
-			common.STAGE_BUILDING_DOCKER_IMAGE))
+			common.STAGE_BUILDING_DOCKER_IMAGE), false)
 
 	return nil
 }
