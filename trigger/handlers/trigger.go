@@ -24,7 +24,7 @@ func Cleanup(dir string) error {
 	// Delete the dir folder and all repos inside
 	d, err := os.Open(dir)
 	if err != nil {
-		return err
+		return nil
 	}
 	defer d.Close()
 	names, err := d.Readdirnames(-1)
@@ -181,6 +181,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 		ctx,
 		dockerFileTarReader,
 		dockertypes.ImageBuildOptions{
+			NoCache:    true,
 			Context:    dockerFileTarReader,
 			Dockerfile: common.GIT_BUILD_FOLDER + "Dockerfile",
 			Remove:     true})
@@ -266,6 +267,6 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Write back the trace ID for the user os they can request
 	// for the status
-	w.Write([]byte(traceId.String()))
-
+	_, _ = w.Write([]byte(traceId.String()))
+	return
 }
