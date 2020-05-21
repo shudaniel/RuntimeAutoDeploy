@@ -1,6 +1,7 @@
 package main
 
 import (
+	"RuntimeAutoDeploy/common"
 	"RuntimeAutoDeploy/trigger/handlers"
 	"net/http"
 	"os"
@@ -12,13 +13,13 @@ import (
 func main() {
 	var err error
 	log.Info("RAD Service Started")
-	//err := handlers.Cleanup(common.GIT_BUILD_FOLDER)
-	//if err != nil {
-	//	log.WithFields(log.Fields{
-	//		"error": err.Error(),
-	//	}).Error("error cleaning up")
-	//	return
-	//}
+	err = handlers.Cleanup(common.GIT_BUILD_FOLDER)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("error cleaning up")
+		return
+	}
 	handlers.StartStatusService()
 
 	http.HandleFunc("/trigger", handlers.RADTriggerHandler)

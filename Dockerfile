@@ -2,7 +2,7 @@ FROM alpine:3.3
 
 RUN mkdir /gobin/
 
-COPY sample_file /gobin
+COPY /Users/aartij17/go/src/RuntimeAutoDeploy/buildRAD/sample_file /gobin
 
 WORKDIR /gobin
 
