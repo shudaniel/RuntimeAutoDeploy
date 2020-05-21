@@ -263,4 +263,9 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 			"error": err.Error(),
 		}).Error("error clearing GIT_BUILD_FOLDER")
 	}
+
+	// Write back the trace ID for the user os they can request
+	// for the status
+	w.Write([]byte(traceId.String()))
+
 }
