@@ -133,8 +133,8 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 	}
 	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
-			common.STAGE_STATUS_WIP,
-			common.STAGE_STATUS_DONE), false)
+			common.STAGE_STATUS_DONE,
+			common.STAGE_GIT), false)
 	return true
 }
 
@@ -258,12 +258,12 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = handleConfigFile(ctx, &data)
-	err = Cleanup(common.GIT_BUILD_FOLDER)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("error clearing GIT_BUILD_FOLDER")
-	}
+	//err = Cleanup(common.GIT_BUILD_FOLDER)
+	//if err != nil {
+	//	log.WithFields(log.Fields{
+	//		"error": err.Error(),
+	//	}).Error("error clearing GIT_BUILD_FOLDER")
+	//}
 
 	// Write back the trace ID for the user os they can request
 	// for the status

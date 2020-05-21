@@ -44,6 +44,7 @@ func RADStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	for i := range statusList {
 		_, _ = w.Write([]byte(statusList[i]))
+		_, _ = w.Write([]byte("\n"))
 	}
 	return
 }
