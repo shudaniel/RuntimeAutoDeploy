@@ -2,7 +2,8 @@ package common
 
 const (
 	TRACE_ID         = "TRACE_ID"
-	GIT_BUILD_FOLDER = "/Users/aartij17/go/src/RuntimeAutoDeploy/buildRAD/"
+	//GIT_BUILD_FOLDER = "/Users/aartij17/go/src/RuntimeAutoDeploy/buildRAD/"
+	GIT_BUILD_FOLDER = "build/"
 
 	// STAGE PRINT
 	STAGE_FORMAT       = "[%s]: %s" // use this as fmt.Sprintf(STAGE_FORMAT, STAGE_STATUS_WIP, STAGE_GIT)
