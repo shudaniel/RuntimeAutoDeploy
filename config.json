@@ -1,0 +1,14 @@
+{
+  "applications": [
+    {
+      "application_name": "sample-app-1",
+      "dockerfile": "Dockerfile",
+      "replica_count": 2,
+    },
+    {
+      "application_name": "sample-app-2",
+      "dockerfile": "Dockerfile",
+      "replica_count": 3
+    }
+  ]
+}

@@ -1,14 +1,26 @@
-package handlers
+package common
 
 import (
-	"RuntimeAutoDeploy/common"
 	"encoding/json"
 	"fmt"
 
 	log "github.com/Sirupsen/logrus"
+	"gopkg.in/redis.v5"
 )
 
-func (routine *Status) addToStatusList(traceId string, status string, firstAdd bool) {
+var (
+	RedisConn *redis.Client
+)
+
+func ConnectToRedis() {
+	RedisConn = redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
+}
+
+func AddToStatusList(traceId string, status string, firstAdd bool) {
 	var (
 		res         string
 		err         error
@@ -19,10 +31,10 @@ func (routine *Status) addToStatusList(traceId string, status string, firstAdd b
 		statusList = make([]string, 0)
 		statusList = append(statusList, status)
 		jStatusList, _ = json.Marshal(statusList)
-		routine.redisConn.Set(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId), jStatusList, 0)
+		RedisConn.Set(fmt.Sprintf("%s-%s", TRACE_ID, traceId), jStatusList, 0)
 		return
 	}
-	res, err = routine.redisConn.Get(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId)).Result()
+	res, err = RedisConn.Get(fmt.Sprintf("%s-%s", TRACE_ID, traceId)).Result()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":     err.Error(),
@@ -40,16 +52,16 @@ func (routine *Status) addToStatusList(traceId string, status string, firstAdd b
 	}
 	statusList = append(statusList, status)
 	jStatusList, _ = json.Marshal(statusList)
-	routine.redisConn.Set(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId), jStatusList, 0)
+	RedisConn.Set(fmt.Sprintf("%s-%s", TRACE_ID, traceId), jStatusList, 0)
 }
 
-func (routine *Status) getStatusList(traceId string) ([]string, error) {
+func GetStatusList(traceId string) ([]string, error) {
 	var (
 		res        string
 		err        error
 		statusList []string
 	)
-	res, err = routine.redisConn.Get(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId)).Result()
+	res, err = RedisConn.Get(fmt.Sprintf("%s-%s", TRACE_ID, traceId)).Result()
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err":     err.Error(),

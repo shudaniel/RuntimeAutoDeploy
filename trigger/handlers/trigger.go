@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"RuntimeAutoDeploy/common"
+	"RuntimeAutoDeploy/config"
 	"archive/tar"
 	"bytes"
 	"context"
@@ -97,7 +98,7 @@ func tarDirectory(dir string, buf io.Writer) error {
 
 func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
-	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
 			common.STAGE_GIT), true)
@@ -111,7 +112,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 			"error": err.Error(),
 		}).Error("error cloning repo")
 
-		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
@@ -124,14 +125,14 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 		// Dockerfile does not exist
 		log.Error("git repo missing Dockerfile")
 
-		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
 				"Missing Dockerfile"), false)
 		return false
 	}
-	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
 			common.STAGE_GIT), false)
@@ -142,7 +143,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 	// https://stackoverflow.com/questions/38804313/build-docker-image-from-go-code
 	//ctx := context.Background()
 
-	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
 			common.STAGE_BUILDING_DOCKER_IMAGE), false)
@@ -151,7 +152,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 
 	if err != nil {
 		log.Fatal(err, " :unable to init client")
-		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_BUILDING_DOCKER_IMAGE,
@@ -167,7 +168,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error(" :unable to tar directory")
-		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_BUILDING_DOCKER_IMAGE,
@@ -190,7 +191,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error(" :unable to build docker image")
-		statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_BUILDING_DOCKER_IMAGE,
@@ -206,7 +207,7 @@ func buildDockerImage(ctx context.Context, path string) error {
 		return err
 	}
 
-	statusRoutine.addToStatusList(ctx.Value(common.TRACE_ID).(string),
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
 			common.STAGE_BUILDING_DOCKER_IMAGE), false)
@@ -214,17 +215,25 @@ func buildDockerImage(ctx context.Context, path string) error {
 	return nil
 }
 
-func handleConfigFile(ctx context.Context, config *common.RADConfig) bool {
+func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) bool {
 	// Parse the config file
 	// Download the git repository into local Trigger/build folder
 	// Check for Dockerfile. If does not exist, quit
 	// else build docker image and store within Trigger/images
-	fmt.Println(config.GitRepoLink)
+	var (
+		err error
+	)
+	fmt.Println(userRequestConfig.GitRepoLink)
 
-	if !downloadGitRepo(ctx, config.GitRepoLink) {
+	if !downloadGitRepo(ctx, userRequestConfig.GitRepoLink) {
 		return false
 	}
-	err := buildDockerImage(ctx, common.GIT_BUILD_FOLDER)
+	// TODO: [Aarti]: Parse the config file first, then proceed to building the docker image
+	err = config.ReadUserConfigFile(ctx)
+	if err != nil {
+		return false
+	}
+	err = buildDockerImage(ctx, common.GIT_BUILD_FOLDER)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err.Error(),
@@ -257,7 +266,7 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("error decoding post body in the trigger handler")
 		return
 	}
-	_ = handleConfigFile(ctx, &data)
+	_ = startDeployment(ctx, &data)
 	//err = Cleanup(common.GIT_BUILD_FOLDER)
 	//if err != nil {
 	//	log.WithFields(log.Fields{
