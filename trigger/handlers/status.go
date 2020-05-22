@@ -35,7 +35,7 @@ func RADStatusHandler(w http.ResponseWriter, r *http.Request) {
 	traceId := r.FormValue(common.TRACE_ID)
 
 	// Fetch the status list from REDIS
-	statusList, err = StatusRoutine.getStatusList(traceId)
+	statusList, err = common.GetStatusList(traceId)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte("internal error, please try again"))
@@ -50,13 +50,9 @@ func RADStatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartStatusService() {
+	common.ConnectToRedis()
 	StatusRoutine = &Status{
-		redisConn:  nil,
+		redisConn:  common.RedisConn,
 		statusList: make([]string, 0),
 	}
-	StatusRoutine.redisConn = redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
-	})
 }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"RuntimeAutoDeploy/common"
-	"RuntimeAutoDeploy/trigger/handlers"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,7 +28,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 		data       []byte
 		userConfig *Config
 	)
-	handlers.StatusRoutine.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
 			common.STAGE_READ_USER_CONFIG_FILE),
@@ -42,7 +41,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 			"path": configFilePath,
 		}).Error("user config file not found in the repository")
 
-		handlers.StatusRoutine.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_READ_USER_CONFIG_FILE,
@@ -54,7 +53,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 	data, err = ioutil.ReadFile(configFilePath)
 	_ = json.Unmarshal(data, &userConfig)
 
-	handlers.StatusRoutine.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
 			common.STAGE_READ_USER_CONFIG_FILE),
