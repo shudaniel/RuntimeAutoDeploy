@@ -18,6 +18,7 @@ type Status struct {
 }
 
 func RADStatusHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("received status request")
 	// When the user pings this, return the status
 	var (
 		err        error

@@ -245,6 +245,7 @@ func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) b
 }
 
 func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
+	log.Info("received trigger request")
 	var (
 		data    common.RADConfig
 		err     error

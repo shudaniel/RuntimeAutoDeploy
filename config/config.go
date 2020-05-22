@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	Applications *[]Application `json:"applications"`
+	Applications []*Application `json:"applications"`
 }
 
 type Application struct {
@@ -51,13 +51,15 @@ func ReadUserConfigFile(ctx context.Context) error {
 	}
 
 	data, err = ioutil.ReadFile(configFilePath)
-	_ = json.Unmarshal(data, &userConfig)
-
+	err = json.Unmarshal(data, &userConfig)
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
 			common.STAGE_READ_USER_CONFIG_FILE),
 		false)
 
+	log.WithFields(log.Fields{
+		"config": userConfig.Applications[0].AppName,
+	}).Info("config read from user file")
 	return nil
 }

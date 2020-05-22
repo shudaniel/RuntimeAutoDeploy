@@ -14,10 +14,10 @@ const (
 	STAGE_STATUS_ERROR = "ERROR"
 
 	// STAGES
-	STAGE_GIT                   = "Git Repo Cloned"
-	STAGE_COLLECTING_DOCKER_REQ = "Collect build requirements"
-	STAGE_BUILDING_DOCKER_IMAGE = "Build docker image"
-	STAGE_READ_USER_CONFIG_FILE = "Read user config file"
+	STAGE_GIT                   = "clone user git repository"
+	STAGE_COLLECTING_DOCKER_REQ = "collect build requirements"
+	STAGE_BUILDING_DOCKER_IMAGE = "build docker image"
+	STAGE_READ_USER_CONFIG_FILE = "read user config file"
 
-	STAGE_CREATING_PODS = "Creating Kubernetes Artefacts"
+	STAGE_CREATING_PODS = "creating kubernetes artefacts"
 )
