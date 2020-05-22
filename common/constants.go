@@ -1,9 +1,10 @@
 package common
 
 const (
-	TRACE_ID         = "TRACE_ID"
+	TRACE_ID = "TRACE_ID"
 	//GIT_BUILD_FOLDER = "/Users/aartij17/go/src/RuntimeAutoDeploy/buildRAD/"
 	GIT_BUILD_FOLDER = "build/"
+	USER_CONFIG_FILE = "config.json"
 
 	// STAGE PRINT
 	STAGE_FORMAT       = "[%s]: %s" // use this as fmt.Sprintf(STAGE_FORMAT, STAGE_STATUS_WIP, STAGE_GIT)
@@ -14,8 +15,9 @@ const (
 
 	// STAGES
 	STAGE_GIT                   = "Git Repo Cloned"
-	STAGE_COLLECTING_DOCKER_REQ = "Collecting build requirements"
-	STAGE_BUILDING_DOCKER_IMAGE = "Building docker image"
+	STAGE_COLLECTING_DOCKER_REQ = "Collect build requirements"
+	STAGE_BUILDING_DOCKER_IMAGE = "Build docker image"
+	STAGE_READ_USER_CONFIG_FILE = "Read user config file"
 
 	STAGE_CREATING_PODS = "Creating Kubernetes Artefacts"
 )

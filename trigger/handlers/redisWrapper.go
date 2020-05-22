@@ -8,7 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-func (routine *Status) addToStatusList(traceId string, status string, firstAdd bool) {
+func (routine *Status) AddToStatusList(traceId string, status string, firstAdd bool) {
 	var (
 		res         string
 		err         error
@@ -43,7 +43,7 @@ func (routine *Status) addToStatusList(traceId string, status string, firstAdd b
 	routine.redisConn.Set(fmt.Sprintf("%s-%s", common.TRACE_ID, traceId), jStatusList, 0)
 }
 
-func (routine *Status) getStatusList(traceId string) ([]string, error) {
+func (routine *Status) GetStatusList(traceId string) ([]string, error) {
 	var (
 		res        string
 		err        error

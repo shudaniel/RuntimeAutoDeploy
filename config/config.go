@@ -1,0 +1,64 @@
+package config
+
+import (
+	"RuntimeAutoDeploy/common"
+	"RuntimeAutoDeploy/trigger/handlers"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+
+	log "github.com/Sirupsen/logrus"
+)
+
+type Config struct {
+	Applications *[]Application `json:"applications"`
+}
+
+type Application struct {
+	AppName      string `json:"application_name"`
+	ReplicaCount int    `json:"replica_count"`
+	Dockerfile   string `json:"dockerfile"`
+}
+
+func ReadUserConfigFile(ctx context.Context) error {
+
+	var (
+		err        error
+		data       []byte
+		userConfig *Config
+	)
+	handlers.StatusRoutine.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_WIP,
+			common.STAGE_READ_USER_CONFIG_FILE),
+		false)
+
+	configFilePath := fmt.Sprintf("%s%s", common.GIT_BUILD_FOLDER, common.USER_CONFIG_FILE)
+	_, err = os.Stat(configFilePath)
+	if err != nil && os.IsNotExist(err) {
+		log.WithFields(log.Fields{
+			"path": configFilePath,
+		}).Error("user config file not found in the repository")
+
+		handlers.StatusRoutine.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_READ_USER_CONFIG_FILE,
+				"user config file(config.json) not found in the repository"),
+			false)
+		return err
+	}
+
+	data, err = ioutil.ReadFile(configFilePath)
+	_ = json.Unmarshal(data, &userConfig)
+
+	handlers.StatusRoutine.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_DONE,
+			common.STAGE_READ_USER_CONFIG_FILE),
+		false)
+
+	return nil
+}
