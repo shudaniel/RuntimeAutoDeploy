@@ -231,10 +231,6 @@ func buildDockerImage(ctx context.Context, path string) error {
 }
 
 func createK8sArtefacts(ctx context.Context) {
-	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
-		fmt.Sprintf(common.STAGE_FORMAT,
-			common.STAGE_STATUS_WIP,
-			common.STAGE_CREATING_K8S), false)
 
 	err := generateK8S.CreateDeployment(ctx, config.UserConfig.Applications[0])
 	if err != nil {
