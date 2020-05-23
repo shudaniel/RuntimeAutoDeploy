@@ -141,7 +141,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 	return true
 }
 
-func buildDockerImage(ctx context.Context, path string) error {
+func buildDockerImage(ctx context.Context, path string, conf *config.Application) error {
 	// https://stackoverflow.com/questions/38804313/build-docker-image-from-go-code
 	//ctx := context.Background()
 
@@ -185,9 +185,9 @@ func buildDockerImage(ctx context.Context, path string) error {
 		dockerFileTarReader,
 		dockertypes.ImageBuildOptions{
 			NoCache:    true,
-			Tags:       []string{"aartij17/runtimeautodeploy:sample-app-1"}, //TODO: make this configurable more when we have more apps to be deployed
+			Tags:       []string{fmt.Sprintf("%s:%s", config.UserConfig.Reg.Address, conf.AppName)},
 			Context:    dockerFileTarReader,
-			Dockerfile: common.GIT_BUILD_FOLDER + "Dockerfile",
+			Dockerfile: fmt.Sprintf("%s%s", common.GIT_BUILD_FOLDER+conf.Dockerfile),
 			Remove:     true})
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -214,13 +214,13 @@ func buildDockerImage(ctx context.Context, path string) error {
 			common.STAGE_STATUS_DONE,
 			common.STAGE_BUILDING_DOCKER_IMAGE), false)
 	authConfig := dockertypes.AuthConfig{
-		Username: "aartij17",
-		Password: "aarti@123",
+		Username: config.UserConfig.Reg.Username,
+		Password: config.UserConfig.Reg.Password,
 	}
 	encodedJSON, err := json.Marshal(authConfig)
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
-	imagePushResponse, err := cli.ImagePush(ctx, "aartij17/runtimeautodeploy:sample-app-1",
-		dockertypes.ImagePushOptions{RegistryAuth: authStr, Platform: "dockerhub"})
+	imagePushResponse, err := cli.ImagePush(ctx, fmt.Sprintf("%s:%s", config.UserConfig.Reg.Address, conf.AppName),
+		dockertypes.ImagePushOptions{RegistryAuth: authStr})
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
@@ -230,15 +230,15 @@ func buildDockerImage(ctx context.Context, path string) error {
 	return nil
 }
 
-func createK8sArtefacts(ctx context.Context) {
+func createK8sArtefacts(ctx context.Context, conf *config.Application) {
 
-	err := generateK8S.CreateDeployment(ctx, config.UserConfig.Applications[0])
+	err := generateK8S.CreateDeployment(ctx, conf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err.Error(),
 		}).Error("error creating deployment")
 	}
-	err = generateK8S.CreateService(ctx, config.UserConfig.Applications[0])
+	err = generateK8S.CreateService(ctx, conf)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"err": err.Error(),
@@ -264,14 +264,17 @@ func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) b
 	if err != nil {
 		return false
 	}
-	err = buildDockerImage(ctx, common.GIT_BUILD_FOLDER)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err.Error(),
-		}).Error("error building docker image")
-		return false
+
+	for _, conf := range config.UserConfig.Applications {
+		err = buildDockerImage(ctx, common.GIT_BUILD_FOLDER, conf)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("error building docker image")
+			return false
+		}
+		createK8sArtefacts(ctx, conf)
 	}
-	createK8sArtefacts(ctx)
 
 	return true
 }

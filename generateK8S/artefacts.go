@@ -43,9 +43,7 @@ import (
 //}
 
 var (
-	ServicePort     = int32(30000)
-	ServiceNodePort = int32(30000)
-	ClientSet       *kubernetes.Clientset
+	ClientSet *kubernetes.Clientset
 )
 
 func GetK8sClient(ctx context.Context) error {
@@ -89,8 +87,8 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 			Ports: []corev1.ServicePort{
 				{
 					Name:     "http",
-					Port:     ServicePort,
-					NodePort: ServiceNodePort,
+					Port:     int32(conf.Port),
+					NodePort: int32(conf.Port),
 				},
 			},
 		},
@@ -150,13 +148,13 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 				Spec: apiv1.PodSpec{
 					Containers: []apiv1.Container{
 						{
-							Name:  "sample-app-1",
-							Image: "aartij17/runtimeautodeploy:sample-app-1", //, ":latest"),
+							Name:  conf.AppName,
+							Image: fmt.Sprintf("%s:%s", config.UserConfig.Reg.Address, conf.AppName), //"aartij17/runtimeautodeploy:sample-app-1", //, ":latest"),
 							Ports: []apiv1.ContainerPort{
 								{
 									Name:          "http",
 									Protocol:      apiv1.ProtocolTCP,
-									ContainerPort: 30000, //TODO: Make this configurable
+									ContainerPort: int32(conf.Port), //TODO: Make this configurable
 								},
 							},
 							Resources: apiv1.ResourceRequirements{
@@ -176,7 +174,7 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 		},
 	}
 	log.WithFields(log.Fields{
-		"name": conf.AppName,
+		"name": fmt.Sprintf("%s-%s", conf.AppName, "deployment"),
 	}).Info("Creating deployment")
 
 	result, err := deploymentClient.Create(context.TODO(), deployment, metav1.CreateOptions{})

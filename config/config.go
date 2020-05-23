@@ -15,12 +15,20 @@ var UserConfig *Config
 
 type Config struct {
 	Applications []*Application `json:"applications"`
+	Reg          *Registry      `json:"registry"`
 }
 
 type Application struct {
 	AppName      string `json:"application_name"`
 	ReplicaCount int    `json:"replica_count"`
 	Dockerfile   string `json:"dockerfile"`
+	Port         int    `json:"port"`
+}
+
+type Registry struct {
+	Address  string `json:"address"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func ReadUserConfigFile(ctx context.Context) error {
