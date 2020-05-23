@@ -11,6 +11,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+var UserConfig *Config
+
 type Config struct {
 	Applications []*Application `json:"applications"`
 }
@@ -24,9 +26,8 @@ type Application struct {
 func ReadUserConfigFile(ctx context.Context) error {
 
 	var (
-		err        error
-		data       []byte
-		userConfig *Config
+		err  error
+		data []byte
 	)
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
@@ -51,7 +52,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 	}
 
 	data, err = ioutil.ReadFile(configFilePath)
-	err = json.Unmarshal(data, &userConfig)
+	err = json.Unmarshal(data, &UserConfig)
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
@@ -59,7 +60,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 		false)
 
 	log.WithFields(log.Fields{
-		"config": userConfig.Applications[0].AppName,
+		"config": UserConfig.Applications[0].AppName,
 	}).Info("config read from user file")
 	return nil
 }

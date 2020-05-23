@@ -3,9 +3,11 @@ package handlers
 import (
 	"RuntimeAutoDeploy/common"
 	"RuntimeAutoDeploy/config"
+	"RuntimeAutoDeploy/generateK8S"
 	"archive/tar"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -183,11 +185,11 @@ func buildDockerImage(ctx context.Context, path string) error {
 		dockerFileTarReader,
 		dockertypes.ImageBuildOptions{
 			NoCache:    true,
+			Tags:       []string{"aartij17/runtimeautodeploy:sample-app-1"}, //TODO: make this configurable more when we have more apps to be deployed
 			Context:    dockerFileTarReader,
 			Dockerfile: common.GIT_BUILD_FOLDER + "Dockerfile",
 			Remove:     true})
 	if err != nil {
-
 		log.WithFields(log.Fields{
 			"error": err.Error(),
 		}).Error(" :unable to build docker image")
@@ -211,8 +213,41 @@ func buildDockerImage(ctx context.Context, path string) error {
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
 			common.STAGE_BUILDING_DOCKER_IMAGE), false)
-
+	authConfig := dockertypes.AuthConfig{
+		Username: "aartij17",
+		Password: "aarti@123",
+	}
+	encodedJSON, err := json.Marshal(authConfig)
+	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+	imagePushResponse, err := cli.ImagePush(ctx, "aartij17/runtimeautodeploy:sample-app-1",
+		dockertypes.ImagePushOptions{RegistryAuth: authStr, Platform: "dockerhub"})
+	if err != nil {
+		fmt.Println(err.Error())
+		return err
+	}
+	defer imagePushResponse.Close()
+	_, err = io.Copy(os.Stdout, imagePushResponse)
 	return nil
+}
+
+func createK8sArtefacts(ctx context.Context) {
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_WIP,
+			common.STAGE_CREATING_K8S), false)
+
+	err := generateK8S.CreateDeployment(ctx, config.UserConfig.Applications[0])
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err.Error(),
+		}).Error("error creating deployment")
+	}
+	err = generateK8S.CreateService(ctx, config.UserConfig.Applications[0])
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err.Error(),
+		}).Error("error creating service")
+	}
 }
 
 func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) bool {
@@ -240,6 +275,7 @@ func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) b
 		}).Error("error building docker image")
 		return false
 	}
+	createK8sArtefacts(ctx)
 
 	return true
 }
@@ -267,6 +303,7 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("error decoding post body in the trigger handler")
 		return
 	}
+	_ = generateK8S.GetK8sClient(ctx)
 	_ = startDeployment(ctx, &data)
 	//err = Cleanup(common.GIT_BUILD_FOLDER)
 	//if err != nil {

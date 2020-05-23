@@ -19,5 +19,5 @@ const (
 	STAGE_BUILDING_DOCKER_IMAGE = "build docker image"
 	STAGE_READ_USER_CONFIG_FILE = "read user config file"
 
-	STAGE_CREATING_PODS = "creating kubernetes artefacts"
+	STAGE_CREATING_K8S = "creating kubernetes artefacts"
 )
