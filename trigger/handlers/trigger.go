@@ -187,7 +187,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 			NoCache:    true,
 			Tags:       []string{fmt.Sprintf("%s:%s", config.UserConfig.Reg.Address, conf.AppName)},
 			Context:    dockerFileTarReader,
-			Dockerfile: fmt.Sprintf("%s%s", common.GIT_BUILD_FOLDER+conf.Dockerfile),
+			Dockerfile: fmt.Sprintf("%s%s", common.GIT_BUILD_FOLDER, conf.Dockerfile),
 			Remove:     true})
 	if err != nil {
 		log.WithFields(log.Fields{
