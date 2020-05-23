@@ -15,8 +15,8 @@ const (
 
 	// STAGES
 	STAGE_GIT                   = "clone user git repository"
-	STAGE_COLLECTING_DOCKER_REQ = "collect build requirements"
-	STAGE_BUILDING_DOCKER_IMAGE = "build docker image"
+	STAGE_BUILDING_DOCKER_IMAGE = "build docker image[%s]"
+	STAGE_PUSH_IMAGE            = "push docker image to repository"
 	STAGE_READ_USER_CONFIG_FILE = "read user config file"
 
 	STAGE_CREATING_DEPLOYMENT = "create kubernetes deployment[%s]"

@@ -148,7 +148,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
-			common.STAGE_BUILDING_DOCKER_IMAGE), false)
+			fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName)), false)
 
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.WithVersion("1.40")) // Max supported API version
 
@@ -157,7 +157,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
-				common.STAGE_BUILDING_DOCKER_IMAGE,
+				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"unable to start the docker init, there's an issue with the docker client"), false)
 		return err
 	}
@@ -173,7 +173,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
-				common.STAGE_BUILDING_DOCKER_IMAGE,
+				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"unable to tar the directory"), false)
 		return err
 	}
@@ -196,7 +196,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
-				common.STAGE_BUILDING_DOCKER_IMAGE,
+				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"error building the docker image"), false)
 		return err
 	}
@@ -212,13 +212,15 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
-			common.STAGE_BUILDING_DOCKER_IMAGE), false)
+			fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName)), false)
+
 	authConfig := dockertypes.AuthConfig{
 		Username: config.UserConfig.Reg.Username,
 		Password: config.UserConfig.Reg.Password,
 	}
 	encodedJSON, err := json.Marshal(authConfig)
 	authStr := base64.URLEncoding.EncodeToString(encodedJSON)
+
 	imagePushResponse, err := cli.ImagePush(ctx, fmt.Sprintf("%s:%s", config.UserConfig.Reg.Address, conf.AppName),
 		dockertypes.ImagePushOptions{RegistryAuth: authStr})
 	if err != nil {

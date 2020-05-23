@@ -55,6 +55,8 @@ func GetK8sClient(ctx context.Context) error {
 }
 
 func CreateService(ctx context.Context, conf *config.Application) error {
+	serviceName := fmt.Sprintf("%s-%s", conf.AppName, "svc")
+
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
@@ -68,22 +70,22 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   fmt.Sprintf("%s-%s", conf.AppName, "svc"),
+			Name:   serviceName,
 			Labels: map[string]string{"app": conf.AppName},
 		},
 		Spec: corev1.ServiceSpec{
 			Type: corev1.ServiceTypeNodePort,
 			Ports: []corev1.ServicePort{
 				{
-					Name:     "http",
-					Port:     int32(conf.Port),
-					NodePort: int32(conf.Port),
+					Name: "http",
+					Port: int32(conf.Port),
+					//NodePort: int32(conf.Port),
 				},
 			},
 		},
 	}
 	log.WithFields(log.Fields{
-		"name": fmt.Sprintf("%s-%s", conf.AppName, "svc"),
+		"name": serviceName,
 	}).Info("Creating service")
 
 	result, err := serviceClient.Create(context.TODO(), service, metav1.CreateOptions{})
@@ -91,8 +93,8 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
-				common.STAGE_CREATING_DEPLOYMENT,
-				fmt.Sprintf("%s-%s", "error creating k8s service", conf.AppName), err.Error()), false)
+				fmt.Sprintf(common.STAGE_CREATING_SERVICE, serviceName),
+				"error creating k8s service", err.Error()), false)
 		return err
 	}
 	log.WithFields(log.Fields{
@@ -102,7 +104,7 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_DONE,
-			fmt.Sprintf(common.STAGE_CREATING_SERVICE, conf.AppName)), false)
+			fmt.Sprintf(common.STAGE_CREATING_SERVICE, serviceName)), false)
 	return nil
 }
 
@@ -171,7 +173,7 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
-				common.STAGE_CREATING_DEPLOYMENT,
+				fmt.Sprintf(common.STAGE_CREATING_DEPLOYMENT, conf.AppName),
 				fmt.Sprintf("%s-%s", "error creating k8s deployment", conf.AppName), err.Error()), false)
 		return err
 	}
