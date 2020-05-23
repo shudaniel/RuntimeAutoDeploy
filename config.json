@@ -10,7 +10,7 @@
       "application_name": "sample-app-2",
       "dockerfile": "Dockerfile",
       "replica_count": 3,
-      "port": 300001
+      "port": 30001
     }
   ],
   "registry": {

@@ -32,7 +32,6 @@ type Registry struct {
 }
 
 func ReadUserConfigFile(ctx context.Context) error {
-
 	var (
 		err  error
 		data []byte

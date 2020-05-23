@@ -30,18 +30,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//func main() {
-//	pod := createPod()
-//	podBytes, err := json.Marshal(pod)
-//	if err != nil {
-//		panic(err)
-//	}
-//	fmt.Println(string(podBytes))
-//	service := createService()
-//	serviceBytes, err := json.Marshal(service)
-//	fmt.Println(string(serviceBytes))
-//}
-
 var (
 	ClientSet *kubernetes.Clientset
 )
@@ -49,7 +37,8 @@ var (
 func GetK8sClient(ctx context.Context) error {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute "+
+			"path to the kubeconfig file")
 	} else {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
@@ -103,7 +92,7 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_CREATING_DEPLOYMENT,
-				fmt.Sprintf("%s-%s", "error creating k8s service", conf.AppName)), false)
+				fmt.Sprintf("%s-%s", "error creating k8s service", conf.AppName), err.Error()), false)
 		return err
 	}
 	log.WithFields(log.Fields{
@@ -149,7 +138,7 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 					Containers: []apiv1.Container{
 						{
 							Name:  conf.AppName,
-							Image: fmt.Sprintf("%s:%s", config.UserConfig.Reg.Address, conf.AppName), //"aartij17/runtimeautodeploy:sample-app-1", //, ":latest"),
+							Image: fmt.Sprintf("%s:%s", config.UserConfig.Reg.Address, conf.AppName),
 							Ports: []apiv1.ContainerPort{
 								{
 									Name:          "http",
@@ -183,7 +172,7 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_CREATING_DEPLOYMENT,
-				fmt.Sprintf("%s-%s", "error creating k8s deployment", conf.AppName)), false)
+				fmt.Sprintf("%s-%s", "error creating k8s deployment", conf.AppName), err.Error()), false)
 		return err
 	}
 	log.WithFields(log.Fields{
