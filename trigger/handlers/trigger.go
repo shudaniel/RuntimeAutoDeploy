@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	dockertypes "github.com/docker/docker/api/types"
 	dockerclient "github.com/docker/docker/client"
-	"github.com/go-git/go-git"
+	"github.com/go-git/go-git/v5"
 )
 
 func Cleanup(dir string) error {
