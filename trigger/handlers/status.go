@@ -4,7 +4,7 @@ import (
 	"RuntimeAutoDeploy/common"
 	"net/http"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/redis.v5"
 )
 
