@@ -17,10 +17,10 @@ import (
 
 	guuid "github.com/google/uuid"
 
-	log "github.com/sirupsen/logrus"
 	dockertypes "github.com/docker/docker/api/types"
 	dockerclient "github.com/docker/docker/client"
-	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git"
+	log "github.com/sirupsen/logrus"
 )
 
 func Cleanup(dir string) error {
