@@ -3,7 +3,10 @@ set -e
 
 echo -e "################################################ Installing Kubectl ################################################ \n"
 
+sudo su
+
 curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl
+sudo mv ./kubectl /usr/local/bin/kubectl
 chmod +x ./kubectl
 
 #kubectl version

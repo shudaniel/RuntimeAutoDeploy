@@ -153,10 +153,10 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 									"cpu":    resource.MustParse("1"),
 									"memory": resource.MustParse("100Mi"),
 								},
-								Requests: apiv1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("100Mi"),
-								},
+								//Requests: apiv1.ResourceList{
+								//	"cpu":    resource.MustParse("1"),
+								//	"memory": resource.MustParse("100Mi"),
+								//},
 							},
 						},
 					},
