@@ -21,4 +21,5 @@ const (
 
 	STAGE_CREATING_DEPLOYMENT = "create kubernetes deployment[%s]"
 	STAGE_CREATING_SERVICE    = "create kubernetes service[%s]"
+	STAGE_K8S_BOOTSTRAP       = "start k8s client"
 )

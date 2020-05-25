@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	guuid "github.com/google/uuid"
@@ -103,7 +104,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.STAGE_STATUS_WIP,
-			common.STAGE_GIT), true)
+			common.STAGE_GIT), false)
 
 	_, err := git.PlainClone(common.GIT_BUILD_FOLDER, false, &git.CloneOptions{
 		URL:      gitrepo,
@@ -304,7 +305,30 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("error decoding post body in the trigger handler")
 		return
 	}
-	_ = generateK8S.GetK8sClient(ctx)
+	err = os.Chmod("setup/rad_management_cluster.sh", 0700)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	output, err := exec.Command("/bin/sh",
+		"setup/rad_management_cluster.sh").Output()
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err.Error(),
+		}).Error("error bootstrapping current cluster as the management cluster")
+		log.Error(string(output))
+		return
+	}
+	log.Info(string(output))
+
+	err = generateK8S.GetK8sClient(ctx)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"err": err.Error(),
+		}).Error("error fetching k8s client")
+		return
+	}
 	_ = startDeployment(ctx, &data)
 	//err = Cleanup(common.GIT_BUILD_FOLDER)
 	//if err != nil {

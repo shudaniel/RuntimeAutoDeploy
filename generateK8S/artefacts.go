@@ -36,6 +36,12 @@ var (
 
 func GetK8sClient(ctx context.Context) error {
 	var kubeconfig *string
+
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_WIP,
+			common.STAGE_K8S_BOOTSTRAP), true)
+
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute "+
 			"path to the kubeconfig file")
@@ -45,12 +51,27 @@ func GetK8sClient(ctx context.Context) error {
 	flag.Parse()
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_K8S_BOOTSTRAP,
+				"error starting k8s client", err.Error()), false)
 		return err
 	}
 	ClientSet, err = kubernetes.NewForConfig(config)
 	if err != nil {
+		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.STAGE_STATUS_ERROR,
+				common.STAGE_K8S_BOOTSTRAP,
+				"error starting k8s client", err.Error()), false)
 		return err
 	}
+	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+		fmt.Sprintf(common.STAGE_FORMAT,
+			common.STAGE_STATUS_DONE,
+			common.STAGE_K8S_BOOTSTRAP), false)
+
 	return nil
 }
 
