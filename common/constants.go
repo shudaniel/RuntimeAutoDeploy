@@ -1,7 +1,9 @@
 package common
 
 const (
-	TRACE_ID = "TRACE_ID"
+	TRACE_ID        = "TRACE_ID"
+	START_TIMESTAMP = "Start-TS"
+	END_TIMESTAMP   = "End-TS"
 	//GIT_BUILD_FOLDER = "/Users/aartij17/go/src/RuntimeAutoDeploy/buildRAD/"
 	GIT_BUILD_FOLDER = "build/"
 	USER_CONFIG_FILE = "config.json"

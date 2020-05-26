@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/redis.v5"
@@ -77,4 +78,17 @@ func GetStatusList(traceId string) ([]string, error) {
 		return nil, fmt.Errorf("%s", "error unmarshalling retreived value from redis")
 	}
 	return statusList, nil
+}
+
+func GetTimestampFormat(st string, et string, op string) string {
+	switch op {
+	case "diff":
+		stParse, _ := time.Parse(time.ANSIC, st)
+		etParse, _ := time.Parse(time.ANSIC, et)
+		diff := etParse.Sub(stParse).Minutes()
+		return fmt.Sprintf("%f", diff)
+	default:
+		tParse, _ := time.Parse(time.ANSIC, st)
+		return tParse.Format(time.ANSIC)
+	}
 }

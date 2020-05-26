@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	guuid "github.com/google/uuid"
 
@@ -285,18 +286,26 @@ func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) b
 func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("received trigger request")
 	var (
-		data    common.RADConfig
-		err     error
-		ctx     context.Context
-		traceId guuid.UUID
+		data      common.RADConfig
+		err       error
+		ctx       context.Context
+		traceId   guuid.UUID
+		startTime string
+		endTime   string
 	)
 	if r.Method != "POST" {
 		log.Error("error. Received incorrect HTTP method. Expecting POST")
 		return
 	}
 	ctx, _ = context.WithCancel(r.Context())
+	// add the unique ID to the context
 	traceId = guuid.New()
 	ctx = context.WithValue(ctx, common.TRACE_ID, traceId.String())
+
+	// add the start timestamp to the context
+	startTime = time.Now().String()
+	// add this to the context as well
+	common.AddToStatusList(fmt.Sprintf("%s-%s", common.START_TIMESTAMP, common.TRACE_ID), startTime, true)
 
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -336,6 +345,9 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	//		"error": err.Error(),
 	//	}).Error("error clearing GIT_BUILD_FOLDER")
 	//}
+
+	endTime = time.Now().String()
+	common.AddToStatusList(fmt.Sprintf("%s-%s", common.END_TIMESTAMP, common.TRACE_ID), endTime, true)
 
 	// Write back the trace ID for the user os they can request
 	// for the status

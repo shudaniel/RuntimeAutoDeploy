@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"RuntimeAutoDeploy/common"
+	"fmt"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -47,7 +48,23 @@ func RADStatusHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(statusList[i]))
 		_, _ = w.Write([]byte("\n"))
 	}
-	return
+	startTimestamp, _ := common.GetStatusList(fmt.Sprintf("%s-%s", common.START_TIMESTAMP, traceId))
+	endTimestamp, _ := common.GetStatusList(fmt.Sprintf("%s-%s", common.END_TIMESTAMP, traceId))
+
+	_, _ = w.Write([]byte(fmt.Sprintf("start time: %s\n",
+		common.GetTimestampFormat(startTimestamp[0], "", ""))))
+
+	if endTimestamp != nil {
+		_, _ = w.Write([]byte(fmt.Sprintf("end time: %s\n",
+			common.GetTimestampFormat(endTimestamp[0], "", ""))))
+
+		_, _ = w.Write([]byte(fmt.Sprintf("time taken: %s\n",
+			common.GetTimestampFormat(startTimestamp[0], endTimestamp[0], "diff"))))
+		return
+	} else {
+		_, _ = w.Write([]byte(fmt.Sprintf("end timestamp cannot be found, either the pipeline is running, OR there has been an error")))
+		return
+	}
 }
 
 func StartStatusService() {
