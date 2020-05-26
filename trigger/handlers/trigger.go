@@ -13,8 +13,8 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
+	"time"
 
 	guuid "github.com/google/uuid"
 
@@ -103,6 +103,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			common.STAGE_GIT), false)
 
@@ -117,6 +118,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
 				err.Error()), false)
@@ -130,6 +132,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
 				"Missing Dockerfile"), false)
@@ -137,6 +140,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 	}
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			common.STAGE_GIT), false)
 	return true
@@ -148,6 +152,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName)), false)
 
@@ -157,6 +162,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		log.Fatal(err, " :unable to init client")
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"unable to start the docker init, there's an issue with the docker client"), false)
@@ -173,6 +179,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		}).Error(" :unable to tar directory")
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"unable to tar the directory"), false)
@@ -196,6 +203,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		}).Error(" :unable to build docker image")
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"error building the docker image"), false)
@@ -212,6 +220,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName)), false)
 
@@ -278,25 +287,34 @@ func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) b
 		}
 		createK8sArtefacts(ctx, conf)
 	}
-
+	endTime := fmt.Sprintf("%d", time.Now().Unix())
+	common.AddToStatusList(fmt.Sprintf("%s-%s", common.END_TIMESTAMP, ctx.Value(common.TRACE_ID).(string)), endTime, true)
+	//deploymentCompleteChan <- true
 	return true
 }
 
 func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("received trigger request")
 	var (
-		data    common.RADConfig
-		err     error
-		ctx     context.Context
-		traceId guuid.UUID
+		data      common.RADConfig
+		err       error
+		ctx       context.Context
+		traceId   guuid.UUID
+		startTime string
 	)
 	if r.Method != "POST" {
 		log.Error("error. Received incorrect HTTP method. Expecting POST")
 		return
 	}
-	ctx, _ = context.WithCancel(r.Context())
+	ctx, _ = context.WithCancel(context.Background())
+	// add the unique ID to the context
 	traceId = guuid.New()
 	ctx = context.WithValue(ctx, common.TRACE_ID, traceId.String())
+
+	// add the start timestamp to the context
+	startTime = fmt.Sprintf("%d", time.Now().Unix())
+	// add this to the context as well
+	common.AddToStatusList(fmt.Sprintf("%s-%s", common.START_TIMESTAMP, traceId), startTime, true)
 
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -305,22 +323,22 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("error decoding post body in the trigger handler")
 		return
 	}
-	err = os.Chmod("setup/rad_management_cluster.sh", 0700)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	output, err := exec.Command("/bin/sh",
-		"setup/rad_management_cluster.sh").Output()
-
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err.Error(),
-		}).Error("error bootstrapping current cluster as the management cluster")
-		log.Error(string(output))
-		return
-	}
-	log.Info(string(output))
+	//err = os.Chmod("setup/rad_management_cluster.sh", 0700)
+	//if err != nil {
+	//	log.Error(err)
+	//	return
+	//}
+	//output, err := exec.Command("/bin/sh",
+	//	"setup/rad_management_cluster.sh").Output()
+	//
+	//if err != nil {
+	//	log.WithFields(log.Fields{
+	//		"err": err.Error(),
+	//	}).Error("error bootstrapping current cluster as the management cluster")
+	//	log.Error(string(output))
+	//	return
+	//}
+	//log.Info(string(output))
 
 	err = generateK8S.GetK8sClient(ctx)
 	if err != nil {
@@ -329,7 +347,7 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("error fetching k8s client")
 		return
 	}
-	_ = startDeployment(ctx, &data)
+	go startDeployment(ctx, &data)
 	//err = Cleanup(common.GIT_BUILD_FOLDER)
 	//if err != nil {
 	//	log.WithFields(log.Fields{

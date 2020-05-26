@@ -14,6 +14,7 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -39,6 +40,7 @@ func GetK8sClient(ctx context.Context) error {
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			common.STAGE_K8S_BOOTSTRAP), true)
 
@@ -53,6 +55,7 @@ func GetK8sClient(ctx context.Context) error {
 	if err != nil {
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_K8S_BOOTSTRAP,
 				"error starting k8s client", err.Error()), false)
@@ -62,6 +65,7 @@ func GetK8sClient(ctx context.Context) error {
 	if err != nil {
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_K8S_BOOTSTRAP,
 				"error starting k8s client", err.Error()), false)
@@ -69,6 +73,7 @@ func GetK8sClient(ctx context.Context) error {
 	}
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			common.STAGE_K8S_BOOTSTRAP), false)
 
@@ -80,6 +85,7 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			fmt.Sprintf(common.STAGE_CREATING_SERVICE, conf.AppName)), false)
 
@@ -113,9 +119,10 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 	if err != nil {
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_CREATING_SERVICE, serviceName),
-				"error creating k8s service", err.Error()), false)
+				fmt.Sprintf("%s-%s", "error creating k8s service", err.Error())), false)
 		return err
 	}
 	log.WithFields(log.Fields{
@@ -124,6 +131,7 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			fmt.Sprintf(common.STAGE_CREATING_SERVICE, serviceName)), false)
 	return nil
@@ -135,6 +143,7 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			fmt.Sprintf(common.STAGE_CREATING_DEPLOYMENT, conf.AppName)), false)
 
@@ -193,9 +202,10 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 	if err != nil {
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_CREATING_DEPLOYMENT, conf.AppName),
-				fmt.Sprintf("%s-%s", "error creating k8s deployment", conf.AppName), err.Error()), false)
+				fmt.Sprintf("%s-%s", "error creating k8s deployment", err.Error())), false)
 		return err
 	}
 	log.WithFields(log.Fields{
@@ -204,6 +214,7 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			fmt.Sprintf(common.STAGE_CREATING_DEPLOYMENT, conf.AppName)), false)
 	return nil

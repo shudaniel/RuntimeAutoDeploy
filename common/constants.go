@@ -1,14 +1,16 @@
 package common
 
 const (
-	TRACE_ID = "TRACE_ID"
+	TRACE_ID        = "TRACE_ID"
+	START_TIMESTAMP = "Start-TS"
+	END_TIMESTAMP   = "End-TS"
 	//GIT_BUILD_FOLDER = "/Users/aartij17/go/src/RuntimeAutoDeploy/buildRAD/"
 	GIT_BUILD_FOLDER = "build/"
 	USER_CONFIG_FILE = "config.json"
 
 	// STAGE PRINT
-	STAGE_FORMAT       = "[%s]: %s" // use this as fmt.Sprintf(STAGE_FORMAT, STAGE_STATUS_WIP, STAGE_GIT)
-	STAGE_ERROR_FORMAT = "[%s]: [Stage] %s: [Error] %s"
+	STAGE_FORMAT       = "[%s]: [%s]: %s" // use this as fmt.Sprintf(STAGE_FORMAT, STAGE_STATUS_WIP, STAGE_GIT)
+	STAGE_ERROR_FORMAT = "[%s]: [%s]: [Stage] %s: [Error] %s"
 	STAGE_STATUS_WIP   = "IN PROGRESS"
 	STAGE_STATUS_DONE  = "COMPLETED"
 	STAGE_STATUS_ERROR = "ERROR"
