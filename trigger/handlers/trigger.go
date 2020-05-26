@@ -103,6 +103,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			common.STAGE_GIT), false)
 
@@ -117,6 +118,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
 				err.Error()), false)
@@ -130,6 +132,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
 				"Missing Dockerfile"), false)
@@ -137,6 +140,7 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 	}
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			common.STAGE_GIT), false)
 	return true
@@ -148,6 +152,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName)), false)
 
@@ -157,6 +162,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		log.Fatal(err, " :unable to init client")
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"unable to start the docker init, there's an issue with the docker client"), false)
@@ -173,6 +179,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		}).Error(" :unable to tar directory")
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"unable to tar the directory"), false)
@@ -196,6 +203,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 		}).Error(" :unable to build docker image")
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName),
 				"error building the docker image"), false)
@@ -212,6 +220,7 @@ func buildDockerImage(ctx context.Context, path string, conf *config.Application
 
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			fmt.Sprintf(common.STAGE_BUILDING_DOCKER_IMAGE, conf.AppName)), false)
 
