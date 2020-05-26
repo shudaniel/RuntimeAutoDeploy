@@ -27,6 +27,10 @@ go get k8s.io/client-go/util/homedir
 # get the user repository
 git clone https://github.com/shudaniel/RuntimeAutoDeploy.git
 
+docker login
+aartij17
+aarti@123
+
 # redis
 
 sudo apt update

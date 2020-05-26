@@ -37,7 +37,6 @@ var (
 
 func GetK8sClient(ctx context.Context) error {
 	var kubeconfig *string
-
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
 			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),

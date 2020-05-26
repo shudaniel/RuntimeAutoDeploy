@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -38,6 +39,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 	)
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_WIP,
 			common.STAGE_READ_USER_CONFIG_FILE),
 		false)
@@ -51,6 +53,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 
 		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_READ_USER_CONFIG_FILE,
 				"user config file(config.json) not found in the repository"),
@@ -62,6 +65,7 @@ func ReadUserConfigFile(ctx context.Context) error {
 	err = json.Unmarshal(data, &UserConfig)
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
+			common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
 			common.STAGE_STATUS_DONE,
 			common.STAGE_READ_USER_CONFIG_FILE),
 		false)
