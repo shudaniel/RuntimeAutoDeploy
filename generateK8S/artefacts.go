@@ -115,7 +115,7 @@ func CreateService(ctx context.Context, conf *config.Application) error {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_CREATING_SERVICE, serviceName),
-				"error creating k8s service", err.Error()), false)
+				fmt.Sprintf("%s-%s", "error creating k8s service", err.Error())), false)
 		return err
 	}
 	log.WithFields(log.Fields{
@@ -195,7 +195,7 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
 				common.STAGE_STATUS_ERROR,
 				fmt.Sprintf(common.STAGE_CREATING_DEPLOYMENT, conf.AppName),
-				fmt.Sprintf("%s-%s", "error creating k8s deployment", conf.AppName), err.Error()), false)
+				fmt.Sprintf("%s-%s", "error creating k8s deployment", err.Error())), false)
 		return err
 	}
 	log.WithFields(log.Fields{

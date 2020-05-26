@@ -58,7 +58,7 @@ func RADStatusHandler(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(fmt.Sprintf("end time: %s\n",
 			common.GetTimestampFormat(endTimestamp[0], "", ""))))
 
-		_, _ = w.Write([]byte(fmt.Sprintf("time taken: %s\n",
+		_, _ = w.Write([]byte(fmt.Sprintf("time taken: %s seconds\n",
 			common.GetTimestampFormat(startTimestamp[0], endTimestamp[0], "diff"))))
 		return
 	} else {

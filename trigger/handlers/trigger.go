@@ -13,7 +13,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -279,7 +278,9 @@ func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) b
 		}
 		createK8sArtefacts(ctx, conf)
 	}
-
+	endTime := fmt.Sprintf("%d", time.Now().Unix())
+	common.AddToStatusList(fmt.Sprintf("%s-%s", common.END_TIMESTAMP, ctx.Value(common.TRACE_ID).(string)), endTime, true)
+	//deploymentCompleteChan <- true
 	return true
 }
 
@@ -291,21 +292,20 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		ctx       context.Context
 		traceId   guuid.UUID
 		startTime string
-		endTime   string
 	)
 	if r.Method != "POST" {
 		log.Error("error. Received incorrect HTTP method. Expecting POST")
 		return
 	}
-	ctx, _ = context.WithCancel(r.Context())
+	ctx, _ = context.WithCancel(context.Background())
 	// add the unique ID to the context
 	traceId = guuid.New()
 	ctx = context.WithValue(ctx, common.TRACE_ID, traceId.String())
 
 	// add the start timestamp to the context
-	startTime = time.Now().String()
+	startTime = fmt.Sprintf("%d", time.Now().Unix())
 	// add this to the context as well
-	common.AddToStatusList(fmt.Sprintf("%s-%s", common.START_TIMESTAMP, common.TRACE_ID), startTime, true)
+	common.AddToStatusList(fmt.Sprintf("%s-%s", common.START_TIMESTAMP, traceId), startTime, true)
 
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
@@ -314,22 +314,22 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("error decoding post body in the trigger handler")
 		return
 	}
-	err = os.Chmod("setup/rad_management_cluster.sh", 0700)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	output, err := exec.Command("/bin/sh",
-		"setup/rad_management_cluster.sh").Output()
-
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err.Error(),
-		}).Error("error bootstrapping current cluster as the management cluster")
-		log.Error(string(output))
-		return
-	}
-	log.Info(string(output))
+	//err = os.Chmod("setup/rad_management_cluster.sh", 0700)
+	//if err != nil {
+	//	log.Error(err)
+	//	return
+	//}
+	//output, err := exec.Command("/bin/sh",
+	//	"setup/rad_management_cluster.sh").Output()
+	//
+	//if err != nil {
+	//	log.WithFields(log.Fields{
+	//		"err": err.Error(),
+	//	}).Error("error bootstrapping current cluster as the management cluster")
+	//	log.Error(string(output))
+	//	return
+	//}
+	//log.Info(string(output))
 
 	err = generateK8S.GetK8sClient(ctx)
 	if err != nil {
@@ -338,16 +338,13 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}).Error("error fetching k8s client")
 		return
 	}
-	_ = startDeployment(ctx, &data)
+	go startDeployment(ctx, &data)
 	//err = Cleanup(common.GIT_BUILD_FOLDER)
 	//if err != nil {
 	//	log.WithFields(log.Fields{
 	//		"error": err.Error(),
 	//	}).Error("error clearing GIT_BUILD_FOLDER")
 	//}
-
-	endTime = time.Now().String()
-	common.AddToStatusList(fmt.Sprintf("%s-%s", common.END_TIMESTAMP, common.TRACE_ID), endTime, true)
 
 	// Write back the trace ID for the user os they can request
 	// for the status

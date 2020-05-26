@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -83,12 +84,15 @@ func GetStatusList(traceId string) ([]string, error) {
 func GetTimestampFormat(st string, et string, op string) string {
 	switch op {
 	case "diff":
-		stParse, _ := time.Parse(time.ANSIC, st)
-		etParse, _ := time.Parse(time.ANSIC, et)
-		diff := etParse.Sub(stParse).Minutes()
+		iSt, _ := strconv.ParseInt(st, 10, 64)
+		stParse := time.Unix(iSt, 0)
+		iEt, _ := strconv.ParseInt(et, 10, 64)
+		etParse := time.Unix(iEt, 0)
+		diff := etParse.Sub(stParse).Seconds()
 		return fmt.Sprintf("%f", diff)
 	default:
-		tParse, _ := time.Parse(time.ANSIC, st)
-		return tParse.Format(time.ANSIC)
+		iSt, _ := strconv.ParseInt(st, 10, 64)
+		stParse := time.Unix(iSt, 0)
+		return fmt.Sprintf("%f", stParse)
 	}
 }
