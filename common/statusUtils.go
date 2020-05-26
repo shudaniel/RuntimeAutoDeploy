@@ -93,6 +93,7 @@ func GetTimestampFormat(st string, et string, op string) string {
 	default:
 		iSt, _ := strconv.ParseInt(st, 10, 64)
 		stParse := time.Unix(iSt, 0)
-		return fmt.Sprintf("%f", stParse)
+		return stParse.Format(time.ANSIC)
+		//return fmt.Sprintf("%d", stParse)
 	}
 }
