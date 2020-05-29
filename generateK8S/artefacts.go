@@ -47,32 +47,36 @@ func GetK8sClient(ctx context.Context) error {
 			common.STAGE_STATUS_WIP,
 			common.STAGE_K8S_BOOTSTRAP), true)
 
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute "+
-			"path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
-			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
-				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
-				common.STAGE_STATUS_ERROR,
-				common.STAGE_K8S_BOOTSTRAP,
-				"error starting k8s client", err.Error()), false)
-		return err
-	}
-	ClientSet, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
-			fmt.Sprintf(common.STAGE_ERROR_FORMAT,
-				common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
-				common.STAGE_STATUS_ERROR,
-				common.STAGE_K8S_BOOTSTRAP,
-				"error starting k8s client", err.Error()), false)
-		return err
+	if !ClientReady {
+		if home := homedir.HomeDir(); home != "" {
+			kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute "+
+				"path to the kubeconfig file")
+		} else {
+			kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+		}
+		flag.Parse()
+
+		k8sConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+		if err != nil {
+			common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+				fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+					common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
+					common.STAGE_STATUS_ERROR,
+					common.STAGE_K8S_BOOTSTRAP,
+					"error starting k8s client", err.Error()), false)
+			return err
+		}
+		ClientSet, err = kubernetes.NewForConfig(k8sConfig)
+		if err != nil {
+			common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
+				fmt.Sprintf(common.STAGE_ERROR_FORMAT,
+					common.GetTimestampFormat(fmt.Sprintf("%d", time.Now().Unix()), "", ""),
+					common.STAGE_STATUS_ERROR,
+					common.STAGE_K8S_BOOTSTRAP,
+					"error starting k8s client", err.Error()), false)
+			return err
+		}
+		ClientReady = true
 	}
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
@@ -80,7 +84,6 @@ func GetK8sClient(ctx context.Context) error {
 			common.STAGE_STATUS_DONE,
 			common.STAGE_K8S_BOOTSTRAP), false)
 
-	ClientReady = true
 	return nil
 }
 
