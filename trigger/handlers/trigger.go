@@ -326,7 +326,7 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	// add the start timestamp to the context
 	startTime = fmt.Sprintf("%d", time.Now().Unix())
 	// add this to the context as well
-	common.AddToStatusList(fmt.Sprintf("%s-%s", common.START_TIMESTAMP, traceId), startTime, true)
+	common.AddToStatusList(fmt.Sprintf("%s-%s", common.START_TIMESTAMP, traceId.String()), startTime, true)
 
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
