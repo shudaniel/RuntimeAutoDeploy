@@ -57,8 +57,8 @@ func tarDirectory(dir string, buf io.Writer) error {
 	filepath.Walk(dir, func(file string, fi os.FileInfo, err error) error {
 		// generate tar header
 
-		// fmt.Println(file)
-		// fmt.Println(fi.Name())
+		//fmt.Println(file)
+		//fmt.Println(fi.Name())
 
 		header, err := tar.FileInfoHeader(fi, file)
 		if err != nil {
@@ -126,7 +126,12 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 		return false
 	}
 
-	if _, err := os.Stat(common.GIT_BUILD_FOLDER + "Dockerfile"); os.IsNotExist(err) {
+	pattern := common.GIT_BUILD_FOLDER + "Dockerfile*"
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		panic(err)
+	}
+	if len(matches) < 1 {
 		// Dockerfile does not exist
 		log.Error("git repo missing Dockerfile")
 
