@@ -1,4 +1,12 @@
 import requests
+import time
+import os
+
+os.system("kubectl delete --all pods")
+os.system("kubectl delete --all deployments")
+os.system("kubectl delete service nats-svc")
+os.system("kubectl delete service pub-sub-svc")
+
 
 url = "http://localhost:8080/trigger"
 
@@ -7,6 +15,29 @@ headers = {
     'Content-Type': 'application/json'
 }
 
-response = requests.request("POST", url, headers=headers, data=payload)
+uid = requests.request("POST", url, headers=headers, data=payload)
 
-print(response.text)
+print(uid.text)
+
+# Sleep for 60 seconds
+time.sleep(30)
+
+responseurl = "http://localhost:8080/status?TRACE_ID=" + str(uid.text)
+
+payload = {}
+headers = {}
+time_taken = 0
+while True:
+    response = requests.request("GET", responseurl, headers=headers, data=payload)
+    final_time = response.text.split("\n")
+    if len(final_time) > 2:
+        time_taken = final_time[-2]
+        components = time_taken.split()
+        if len(components) == 4 and components[0] == "time" and components[1] == "taken:":
+            time_taken = components[2]
+            break
+        else:
+            print("Not done yet:", final_time[-2])
+    time.sleep(10)
+
+print(time_taken, 'seconds')

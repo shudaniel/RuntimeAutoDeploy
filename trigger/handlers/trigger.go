@@ -294,6 +294,13 @@ func startDeployment(ctx context.Context, userRequestConfig *common.RADConfig) b
 	}
 	endTime := fmt.Sprintf("%d", time.Now().Unix())
 	common.AddToStatusList(fmt.Sprintf("%s-%s", common.END_TIMESTAMP, ctx.Value(common.TRACE_ID).(string)), endTime, true)
+	
+	err = Cleanup(common.GIT_BUILD_FOLDER)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err.Error(),
+		}).Error("error clearing GIT_BUILD_FOLDER")
+	}
 	//deploymentCompleteChan <- true
 	return true
 }
@@ -355,12 +362,7 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	go startDeployment(ctx, &data)
-	//err = Cleanup(common.GIT_BUILD_FOLDER)
-	//if err != nil {
-	//	log.WithFields(log.Fields{
-	//		"error": err.Error(),
-	//	}).Error("error clearing GIT_BUILD_FOLDER")
-	//}
+	
 
 	// Write back the trace ID for the user os they can request
 	// for the status
