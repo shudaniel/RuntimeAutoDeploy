@@ -345,12 +345,14 @@ func RADTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	//}
 	//log.Info(string(output))
 
-	err = generateK8S.GetK8sClient(ctx)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"err": err.Error(),
-		}).Error("error fetching k8s client")
-		return
+	if !generateK8S.ClientReady {
+		err = generateK8S.GetK8sClient(ctx)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"err": err.Error(),
+			}).Error("error fetching k8s client")
+			return
+		}
 	}
 	go startDeployment(ctx, &data)
 	//err = Cleanup(common.GIT_BUILD_FOLDER)

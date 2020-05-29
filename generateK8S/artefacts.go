@@ -14,9 +14,8 @@ import (
 	"flag"
 	"fmt"
 	"path/filepath"
+	"sync"
 	"time"
-
-	"k8s.io/apimachinery/pkg/api/resource"
 
 	log "github.com/sirupsen/logrus"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,10 +31,15 @@ import (
 )
 
 var (
-	ClientSet *kubernetes.Clientset
+	ClientSet   *kubernetes.Clientset
+	ClientReady = false
+	ClientLock  sync.Mutex
 )
 
 func GetK8sClient(ctx context.Context) error {
+	ClientLock.Lock()
+	defer ClientLock.Unlock()
+
 	var kubeconfig *string
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
 		fmt.Sprintf(common.STAGE_FORMAT,
@@ -76,6 +80,7 @@ func GetK8sClient(ctx context.Context) error {
 			common.STAGE_STATUS_DONE,
 			common.STAGE_K8S_BOOTSTRAP), false)
 
+	ClientReady = true
 	return nil
 }
 
@@ -177,16 +182,16 @@ func CreateDeployment(ctx context.Context, conf *config.Application) error {
 									ContainerPort: int32(conf.Port), //TODO: Make this configurable
 								},
 							},
-							Resources: apiv1.ResourceRequirements{
-								Limits: apiv1.ResourceList{
-									"cpu":    resource.MustParse("1"),
-									"memory": resource.MustParse("100Mi"),
-								},
-								//Requests: apiv1.ResourceList{
-								//	"cpu":    resource.MustParse("1"),
-								//	"memory": resource.MustParse("100Mi"),
-								//},
-							},
+							//Resources: apiv1.ResourceRequirements{
+							//Limits: apiv1.ResourceList{
+							//	"cpu":    resource.MustParse("1"),
+							//	"memory": resource.MustParse("100Mi"),
+							//},
+							//Requests: apiv1.ResourceList{
+							//	"cpu":    resource.MustParse("0.5"),
+							//	"memory": resource.MustParse("100Mi"),
+							//},
+							//},
 						},
 					},
 				},
