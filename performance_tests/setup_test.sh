@@ -2,8 +2,7 @@
 
 start=$SECONDS
 sh ../setup/setup_rad_wordload_cluster.sh
-duration=$(( SECONDS - start ))
-echo $(duration)
-echo "^seconds"
+echo $(( SECONDS - start )) seconds
+
 
 kubectl delete -f ../../../../capi-quickstart.yaml 
