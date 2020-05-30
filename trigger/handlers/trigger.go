@@ -122,7 +122,13 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
 				err.Error()), false)
-
+		
+		err = Cleanup(common.GIT_BUILD_FOLDER)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("error clearing GIT_BUILD_FOLDER")
+		}
 		return false
 	}
 
@@ -141,6 +147,13 @@ func downloadGitRepo(ctx context.Context, gitrepo string) bool {
 				common.STAGE_STATUS_ERROR,
 				common.STAGE_GIT,
 				"Missing Dockerfile"), false)
+
+		err = Cleanup(common.GIT_BUILD_FOLDER)
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err.Error(),
+			}).Error("error clearing GIT_BUILD_FOLDER")
+		}
 		return false
 	}
 	common.AddToStatusList(ctx.Value(common.TRACE_ID).(string),
